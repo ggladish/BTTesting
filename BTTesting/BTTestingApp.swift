@@ -11,7 +11,7 @@ import SwiftUI
 struct BTTestingApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            BluetoothTesterView()
         }
     }
 }
