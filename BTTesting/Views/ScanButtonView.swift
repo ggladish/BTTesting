@@ -12,8 +12,8 @@ struct ScanButtonView: View {
     
     var body: some View {
         isScanning ?
-        Text("Stop Scanning") :
-        Text("Start Scanning")
+        Text("Scanning") :
+        Text("Not Scanning")
     }
 }
 

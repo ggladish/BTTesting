@@ -9,11 +9,11 @@ import Foundation
 import CoreBluetooth
 
 struct BTDevice : Identifiable, Codable {
-    var friendlyName: String?
+    private var friendlyName: String?
     var deviceManufacturer: String?  // maybe a struct of device info
     var peripheral: CBPeripheral?
-    var id: UUID
-    var isKnown = false
+    private(set) var id: UUID
+    private(set) var isKnown = false
     var connectRequested = false
     var lastPacketDate: Date?
     var deviceType = DeviceType.unknown

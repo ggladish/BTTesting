@@ -11,7 +11,7 @@ import CoreBluetooth
 @Observable
 class BTManager: NSObject {
     
-    private var availableBTDevices = [BTDevice]()
+    var availableBTDevices = [BTDevice]()
     
     private var centralManager: CBCentralManager!
     var isScanning = false
@@ -26,11 +26,11 @@ class BTManager: NSObject {
     
     // MARK: Convenience index requests
     
-    private func index(of device: BTDevice?) -> Int? {
+    func index(of device: BTDevice?) -> Int? {
         availableBTDevices.firstIndex(where: {$0.id == device?.id})
     }
     
-    private func index(withUUID uuid: UUID) -> Int? {
+    func index(withUUID uuid: UUID) -> Int? {
         availableBTDevices.firstIndex(where: {$0.id == uuid})
     }
    
@@ -111,6 +111,16 @@ class BTManager: NSObject {
         }
     }
     
+    func removeDevice(_ device: BTDevice) {
+        guard let index = index(of: device) else { return }
+        deselectBluetoothDevice(device)
+        availableBTDevices.remove(at: index)
+        saveKnownDevices(to: devicesURL)
+        if isScanning {
+            startBluetoothScan()
+        }
+    }
+    
 }
 
 extension BTManager: CBCentralManagerDelegate {
@@ -186,6 +196,7 @@ extension BTManager: CBCentralManagerDelegate {
         print("BTH: \(peripheral)")
         // if known, try to reconnect if connectRequested
         if let index = index(withUUID: peripheral.identifier) {
+            print("Did discover prior device \(peripheral)")
             if availableBTDevices[index].peripheral == nil {
                 availableBTDevices[index].peripheral = peripheral
             }
@@ -195,6 +206,7 @@ extension BTManager: CBCentralManagerDelegate {
                 central.connect(availableBTDevices[index].peripheral!)
             }
         } else { // if new, just add to the list
+            print("Did discover new device \(peripheral)")
             availableBTDevices.append(BTDevice(peripheral: peripheral))
         }
     }
@@ -286,6 +298,51 @@ extension BTManager: CBPeripheralDelegate {
               print("BTH: Haven't handled \(characteristic.uuid.uuidString) yet.")
         }
     }
+    
+    func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
+        print("Closed \(invalidatedServices.count) services. ")
+        for service in invalidatedServices {
+            print(service.description)
+        }
+        if let services = peripheral.services {
+            if services.count == 0,
+               let _ = index(withUUID: peripheral.identifier) {
+                print("trying to reconnect")
+                peripheral.discoverServices([SerialBTDevice.serialDataServiceCBUUID])
+            }
+            print("\(peripheral.services?.count ?? 0) known services")
+            for service in services {
+                print(service.description)
+            }
+        }
+        print("peripheral state is \(peripheral.state.description)")
+    }
+
 }
 
+extension CBPeripheralState {
+    var description : String {
+        switch self {
+        case .connected: "Connected"
+        case .connecting: "Connecting"
+        case .disconnected: "Disconnected"
+        case .disconnecting: "Disconnecting"
+        default: "Future Unknown"
+        }
+    }
+}
+
+extension CBManagerState {
+    var description : String {
+        switch self {
+        case .poweredOn: "Powered On"
+        case .poweredOff: "Powered Off"
+        case .resetting: "Resetting"
+        case .unauthorized: "Unauthorized"
+        case .unknown: "Unknown"
+        case .unsupported: "Unsuported"
+        default: "Future Unknown"
+        }
+    }
+}
 
