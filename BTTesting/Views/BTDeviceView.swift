@@ -23,15 +23,15 @@ struct BTDeviceView: View {
                 }
         } else {
             connectionButton
-                .listRowBackground(device.isConnected ?
-                                   ((device.lastPacketDate ?? Date.distantPast).timeIntervalSinceNow > Constants.stallInterval ?
-                                    Constants.HighlightColor.active : Constants.HighlightColor.stalled) :
+                .listRowBackground(device.isConnected ? device.isStalled ?
+                                   Constants.HighlightColor.stalled :
+                                    Constants.HighlightColor.active :
                                     Constants.HighlightColor.inactive)
                 .swipeActions(edge: .leading) { editButton }
                 .swipeActions { deleteButton }
-         }
-//        .popover(isPresented: $isEditing) {
-//            nameEditor
+        }
+        //        .popover(isPresented: $isEditing) {
+        //            nameEditor
 //            .presentationCompactAdaptation(.popover)
 //        }
     }

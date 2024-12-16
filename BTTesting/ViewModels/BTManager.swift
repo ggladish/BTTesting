@@ -15,7 +15,7 @@ class BTManager: NSObject {
     
     private var centralManager: CBCentralManager!
     var isScanning = false
-    private var timer: Timer?
+    private var bluetoothScanTimer: Timer?
     
 
     override init() {
@@ -121,6 +121,15 @@ class BTManager: NSObject {
         }
     }
     
+    private func renewStallTimer(for peripheral: CBPeripheral) {
+        guard let index = index(withUUID: peripheral.identifier) else { return }
+        availableBTDevices[index].isStalled = false
+        if let timer = availableBTDevices[index].stallTimer { timer.invalidate() }
+        availableBTDevices[index].stallTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: false) { _ in
+            self.availableBTDevices[index].isStalled = true
+        }
+    }
+    
 }
 
 extension BTManager: CBCentralManagerDelegate {
@@ -155,8 +164,8 @@ extension BTManager: CBCentralManagerDelegate {
             print("BTH: start scanning")
             isScanning = true
             // kill any previous timer and set a timer to shut this off after 30 seconds
-            if let timer { timer.invalidate() }
-            timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: false) { _ in self.endBluetoothScan() }
+            if let bluetoothScanTimer { bluetoothScanTimer.invalidate() }
+            bluetoothScanTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: false) { _ in self.endBluetoothScan() }
         }
     }
     
@@ -166,12 +175,12 @@ extension BTManager: CBCentralManagerDelegate {
         if centralManager.state == .poweredOn {
             centralManager.stopScan()
         }
-        if let timer { timer.invalidate() }
+        if let bluetoothScanTimer { bluetoothScanTimer.invalidate() }
     }
     
     func selectBluetoothDevice(_ device: BTDevice) {
         if let index = index(of: device) {
-            availableBTDevices[index].connectRequested = true
+            availableBTDevices[index].activate()
         }
         if centralManager.state == .poweredOn {
             setKnown(device)
@@ -183,7 +192,7 @@ extension BTManager: CBCentralManagerDelegate {
     
     func deselectBluetoothDevice(_ device: BTDevice) {
         if let index = index(of: device) {
-            availableBTDevices[index].connectRequested = false
+            availableBTDevices[index].deactivate()
         }
         if centralManager.state == .poweredOn {
             if let peripheral = device.peripheral {
@@ -209,6 +218,7 @@ extension BTManager: CBCentralManagerDelegate {
             print("Did discover new device \(peripheral)")
             availableBTDevices.append(BTDevice(peripheral: peripheral))
         }
+        renewStallTimer(for: peripheral)
     }
     
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -220,6 +230,8 @@ extension BTManager: CBCentralManagerDelegate {
         }
         peripheral.discoverServices([SerialBTDevice.serialDataServiceCBUUID])
         // add device information CBUUID if desired, but then handle data in CBPeripheralDelegate
+        
+        renewStallTimer(for: peripheral)
     }
     
 //    func centralManager(_ central: CBCentralManager, didDisconnect peripheral: CBPeripheral) {
@@ -238,44 +250,47 @@ extension BTManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
         // TODO: handle errors, maybe just print .localizedDescription and return
-      guard let services = peripheral.services else {return}
-      
-      for service in services {
-        print("BTH: service \(service.uuid.uuidString) \(service)")
-          peripheral.discoverCharacteristics([SerialBTDevice.mfgrNameCharacteristicCBUUID,
-                                              SerialBTDevice.readDataPortCharacteristicCBUUID,
-                                              SerialBTDevice.writeDataPortCharacteristicCBUUID], for: service)
-      }
+        guard let services = peripheral.services else {return}
+        
+        for service in services {
+            print("BTH: service \(service.uuid.uuidString) \(service)")
+            peripheral.discoverCharacteristics([SerialBTDevice.mfgrNameCharacteristicCBUUID,
+                                                SerialBTDevice.readDataPortCharacteristicCBUUID,
+                                                SerialBTDevice.writeDataPortCharacteristicCBUUID], for: service)
+        }
+        
+        renewStallTimer(for: peripheral)
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: (any Error)?) {
         // TODO:  handle errors
-      guard let characteristics = service.characteristics else {return}
-      
-      print("BTH: Characteristics for \(service.uuid.uuidString) \(service.uuid)")
-      for characteristic in characteristics {
-  //      print(characteristic)
-        if characteristic.properties.contains(.read) {
-          print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .read")
-          peripheral.readValue(for: characteristic)
+        guard let characteristics = service.characteristics else {return}
+        
+        print("BTH: Characteristics for \(service.uuid.uuidString) \(service.uuid)")
+        for characteristic in characteristics {
+            //      print(characteristic)
+            if characteristic.properties.contains(.read) {
+                print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .read")
+                peripheral.readValue(for: characteristic)
+            }
+            if characteristic.properties.contains(.notify) {
+                print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .notify")
+                peripheral.setNotifyValue(true, for: characteristic)
+            }
+            if characteristic.properties.contains((.write)) {
+                print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .write")
+            }
+            if characteristic.properties.contains((.writeWithoutResponse)) {
+                print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .writeWithoutResponse")
+            }
+            if characteristic.properties.contains((.broadcast)) {
+                print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .broadcast")
+            }
+            if characteristic.properties.contains((.indicate)) {
+                print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .indicate")
+            }
         }
-        if characteristic.properties.contains(.notify) {
-          print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .notify")
-          peripheral.setNotifyValue(true, for: characteristic)
-        }
-        if characteristic.properties.contains((.write)) {
-          print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .write")
-        }
-        if characteristic.properties.contains((.writeWithoutResponse)) {
-          print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .writeWithoutResponse")
-        }
-        if characteristic.properties.contains((.broadcast)) {
-          print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .broadcast")
-        }
-        if characteristic.properties.contains((.indicate)) {
-          print("\(characteristic.uuid.uuidString) \(characteristic.uuid.description): properties contains .indicate")
-        }
-      }
+        renewStallTimer(for: peripheral)
     }
     
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: (any Error)?) {
@@ -297,6 +312,7 @@ extension BTManager: CBPeripheralDelegate {
         default:
               print("BTH: Haven't handled \(characteristic.uuid.uuidString) yet.")
         }
+        renewStallTimer(for: peripheral)
     }
     
     func peripheral(_ peripheral: CBPeripheral, didModifyServices invalidatedServices: [CBService]) {
@@ -316,6 +332,7 @@ extension BTManager: CBPeripheralDelegate {
             }
         }
         print("peripheral state is \(peripheral.state.description)")
+        renewStallTimer(for: peripheral)
     }
 
 }

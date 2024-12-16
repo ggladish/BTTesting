@@ -14,8 +14,10 @@ struct BTDevice : Identifiable, Codable {
     var peripheral: CBPeripheral?
     private(set) var id: UUID
     private(set) var isKnown = false
-    var connectRequested = false
+    private(set) var connectRequested = false
     var lastPacketDate: Date?
+    var stallTimer: Timer?
+    var isStalled: Bool = true
     var deviceType = DeviceType.unknown
     
     init(deviceName: String? = nil, peripheral: CBPeripheral) {
@@ -76,8 +78,13 @@ struct BTDevice : Identifiable, Codable {
     }
     
     mutating func deactivate() {
-        // remove the peripheral, probably done because the BTManager got reset or turned off
-        peripheral = nil
+        connectRequested = false
+        stallTimer?.invalidate()
+        isStalled = true
+    }
+    
+    mutating func activate() {
+        connectRequested = true
     }
     
     mutating func setDeviceMfgr(to value: Data) {
