@@ -29,13 +29,47 @@ enum SerialBTDevice {
 
 }
 
-struct deviceInformation {
+struct DeviceInformation: Codable {
     var manufacturerName: String?
     var modelNumber: String?
     var serialNumber: String?
     var hardwareRevision: String?
     var firmwareRevision: String?
     var softwareRevision: String?
-    var systemID: Int?
-    var pnpID: Int?
+    var systemID: [UInt8] = []
+    var pnpID: [UInt8] = []
+    var medicalDeviceUDI: [UInt8] = []
+    var ieeeeDataList: [UInt8] = []
+    
+    mutating func setDeviceInformation(for mfgrDataType: MfgrDataType, to value: Data) {
+        let valueAsString = String(data: value, encoding: .utf8)
+        switch mfgrDataType {
+        case .ManufacturerName: manufacturerName = valueAsString ?? "Garbled"
+        case .ModelNumber: modelNumber = valueAsString ?? "Garbled"
+        case .SerialNumber: serialNumber = valueAsString ?? "Garbled"
+        case .HardwareRev: hardwareRevision = valueAsString ?? "Garbled"
+        case .FirmwareRev: firmwareRevision = valueAsString ?? "Garbled"
+        case .SoftwareRev: softwareRevision = valueAsString ?? "Garbled"
+        case .SystemID: systemID = value.map { $0 }
+        case .PnPID: pnpID = value.map { $0 }
+        case .MedicalDeviceUDI: medicalDeviceUDI = value.map { $0 }
+        case .IEEEDataList: ieeeeDataList = value.map { $0 }
+        }
+    }
+        
 }
+
+enum MfgrDataType : String {
+    case ManufacturerName
+    case ModelNumber
+    case SerialNumber
+    case HardwareRev
+    case FirmwareRev
+    case SoftwareRev
+    case SystemID
+    case PnPID
+    case MedicalDeviceUDI
+    case IEEEDataList
+}
+
+

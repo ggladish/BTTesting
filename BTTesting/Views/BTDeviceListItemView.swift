@@ -1,5 +1,5 @@
 //
-//  BTDeviceView.swift
+//  BTDeviceListItemView.swift
 //  BTTesting
 //
 //  Created by Gregory Gladish on 12/13/24.
@@ -8,32 +8,32 @@
 import SwiftUI
 import CoreBluetooth
 
-struct BTDeviceView: View {
+struct BTDeviceListItemView: View {
     @Environment(BTManager.self) private var btManager: BTManager
     @Binding var device: BTDevice
     
-    @State private var isEditing = false
+    @State private var isEditingDeviceName = false
+    @State private var isDisplaying = false
        
     var body: some View {
-        if isEditing {
+        if isEditingDeviceName {
             TextField("Assign a device name", text: $device.displayName)
                 .onSubmit {
-                    isEditing = false
+                    isEditingDeviceName = false
                     btManager.setKnown(device)
                 }
         } else {
-            connectionButton
-                .listRowBackground(device.isConnected ? device.isStalled ?
-                                   Constants.HighlightColor.stalled :
-                                    Constants.HighlightColor.active :
-                                    Constants.HighlightColor.inactive)
-                .swipeActions(edge: .leading) { editButton }
+            DeviceConnectionButton(device: $device)
+//                .contentShape(Rectangle())
+                .onLongPressGesture { isEditingDeviceName = true }  // TODO: Add Haptic 
+//                .swipeActions(edge: .leading) { editNameButton }  // redundant since onLongPressGesture works
+                .swipeActions(edge: .leading) { displayDetailsButton }
                 .swipeActions { deleteButton }
+                .sheet(isPresented: $isDisplaying) {
+                    DeviceDetailView(device: $device)
+                }
         }
-        //        .popover(isPresented: $isEditing) {
-        //            nameEditor
 //            .presentationCompactAdaptation(.popover)
-//        }
     }
     
     private var connectionButton: some View {
@@ -49,9 +49,15 @@ struct BTDeviceView: View {
         // Currently, just checks that it has been present since the app started
     }
     
-    private var editButton: some View {
+    private var editNameButton: some View {
         Button("Edit") {
-            isEditing = true
+            isEditingDeviceName = true
+        }
+    }
+    
+    private var displayDetailsButton: some View {
+        Button("Details",systemImage: "list.bullet.rectangle") {
+            isDisplaying = true
         }
     }
  
@@ -61,20 +67,20 @@ struct BTDeviceView: View {
         }
     }
     
-    private struct Constants {
-        static let stallInterval: TimeInterval = -15.0
-        struct HighlightColor {
-            static let active = Color.blue.opacity(0.2)
-            static let stalled = Color.red.opacity(0.2)
-            static let inactive = Color.gray.opacity(0.2)
-        }
-    }
+//    private struct Constants {
+//        static let stallInterval: TimeInterval = -15.0
+//        struct HighlightColor {
+//            static let active = Color.blue.opacity(0.2)
+//            static let stalled = Color.red.opacity(0.2)
+//            static let inactive = Color.gray.opacity(0.2)
+//        }
+//    }
 
 }
 
 #Preview {
     @Previewable @State var device = BTDevice(deviceName: "Test Device", id: UUID())
     
-    BTDeviceView(device: $device)
+    BTDeviceListItemView(device: $device)
         .environment(BTManager())
 }

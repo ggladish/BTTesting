@@ -10,12 +10,13 @@ import CoreBluetooth
 
 struct BTDevice : Identifiable, Codable {
     private var friendlyName: String?
-    var deviceManufacturer: String?  // maybe a struct of device info
+    var deviceInformation = DeviceInformation()
     var peripheral: CBPeripheral?
     private(set) var id: UUID
     private(set) var isKnown = false
     private(set) var connectRequested = false
     var lastPacketDate: Date?
+    private(set) var lastPacket: String?
     var stallTimer: Timer?
     var isStalled: Bool = true
     var deviceType = DeviceType.unknown
@@ -33,7 +34,7 @@ struct BTDevice : Identifiable, Codable {
     
     enum CodingKeys: CodingKey {
         case friendlyName
-        case deviceManufacturer
+        case deviceInformation
         case isKnown
         case connectRequested
         case id
@@ -43,7 +44,7 @@ struct BTDevice : Identifiable, Codable {
     init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         friendlyName = try values.decode(String?.self, forKey: .friendlyName)
-        deviceManufacturer = try values.decode(String?.self, forKey: .deviceManufacturer)
+        deviceInformation = try values.decode(DeviceInformation.self, forKey: .deviceInformation)
         isKnown = try values.decode(Bool.self, forKey: .isKnown)
         connectRequested = try values.decode(Bool.self, forKey: .connectRequested)
         id = try values.decode(UUID.self, forKey: .id)
@@ -53,7 +54,7 @@ struct BTDevice : Identifiable, Codable {
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(friendlyName, forKey: .friendlyName)
-        try container.encode(deviceManufacturer, forKey: .deviceManufacturer)
+        try container.encode(deviceInformation, forKey: .deviceInformation)
         try container.encode(isKnown, forKey: .isKnown)
         try container.encode(connectRequested, forKey: .connectRequested)
         try container.encode(id, forKey: .id)
@@ -87,19 +88,16 @@ struct BTDevice : Identifiable, Codable {
         connectRequested = true
     }
     
-    mutating func setDeviceMfgr(to value: Data) {
-            if let name = String(data: value, encoding: .utf8) {
-                print(name)
-                deviceManufacturer = name
-            } else {
-                deviceManufacturer = "Garbled"
-            }
+    mutating func setDeviceInfo(for mfgrDataType: MfgrDataType, to value: Data) {
+        print("BTDevice setting \(mfgrDataType)")
+        deviceInformation.setDeviceInformation(for: mfgrDataType, to: value)
     }
     
     mutating func processPacket(_ data: Data?) {
         // packets printed if possible
         guard let data else { return }
         if let inputString = String(data: data, encoding: .utf8) {
+            lastPacket = inputString
             print(inputString)
         }
         lastPacketDate = Date.now

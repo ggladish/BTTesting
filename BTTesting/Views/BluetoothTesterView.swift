@@ -37,7 +37,7 @@ struct BluetoothTesterView: View {
         Section("Known Devices") {
             ForEach (bluetoothManager.knownDevices) { device in
                 if let index = bluetoothManager.index(of: device) {
-                    BTDeviceView(device: $bluetoothManager.availableBTDevices[index])
+                    BTDeviceListItemView(device: $bluetoothManager.availableBTDevices[index])
                 }
             }
         }
@@ -47,7 +47,7 @@ struct BluetoothTesterView: View {
         Section("Unnown Devices") {
             ForEach (bluetoothManager.unknownDevices) { device in
                 if let index = bluetoothManager.index(of: device) {
-                    BTDeviceView(device: $bluetoothManager.availableBTDevices[index])
+                    BTDeviceListItemView(device: $bluetoothManager.availableBTDevices[index])
                 }
             }
         }

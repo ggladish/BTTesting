@@ -228,8 +228,8 @@ extension BTManager: CBCentralManagerDelegate {
             availableBTDevices[index].peripheral = peripheral
 //            availableBTDevices[index].isConnected = true
         }
-        peripheral.discoverServices([SerialBTDevice.serialDataServiceCBUUID])
-        // add device information CBUUID if desired, but then handle data in CBPeripheralDelegate
+        peripheral.discoverServices([SerialBTDevice.serialDataServiceCBUUID,
+                                     SerialBTDevice.deviceInformationServiceCBUUID])
         
         renewStallTimer(for: peripheral)
     }
@@ -255,6 +255,14 @@ extension BTManager: CBPeripheralDelegate {
         for service in services {
             print("BTH: service \(service.uuid.uuidString) \(service)")
             peripheral.discoverCharacteristics([SerialBTDevice.mfgrNameCharacteristicCBUUID,
+                                                SerialBTDevice.modelNumberCharacteristicCBUUID,
+                                                SerialBTDevice.serialNumberCharacteristicCBUUID,
+                                                SerialBTDevice.hardwareRevCharacteristicCBUUID,
+                                                SerialBTDevice.firmwareRevCharacteristicCBUUID,
+                                                SerialBTDevice.softwareRevCharacteristicCBUUID,
+                                                SerialBTDevice.systemIDCharacteristicCBUUID,
+                                                SerialBTDevice.pnpIDCharacteristicCBUUID,
+                                                SerialBTDevice.medicalDevUDICharacteristicCBUUID,
                                                 SerialBTDevice.readDataPortCharacteristicCBUUID,
                                                 SerialBTDevice.writeDataPortCharacteristicCBUUID], for: service)
         }
@@ -301,17 +309,42 @@ extension BTManager: CBPeripheralDelegate {
             print("BTH: No matching device to receive value updates")
             return
         }
-        
-        switch characteristic.uuid {
-        case SerialBTDevice.mfgrNameCharacteristicCBUUID:
-            if let value =  characteristic.value  {
-                availableBTDevices[index].setDeviceMfgr(to: value)
-              }
-        case SerialBTDevice.readDataPortCharacteristicCBUUID:
-            availableBTDevices[index].processPacket(characteristic.value)
-        default:
-              print("BTH: Haven't handled \(characteristic.uuid.uuidString) yet.")
+        if let value =  characteristic.value  {
+            switch characteristic.uuid {
+            case SerialBTDevice.mfgrNameCharacteristicCBUUID:
+                print("got manufacturer name")
+                availableBTDevices[index].setDeviceInfo(for: .ManufacturerName, to: value)
+            case SerialBTDevice.modelNumberCharacteristicCBUUID:
+                print("got model number")
+                availableBTDevices[index].setDeviceInfo(for: .ModelNumber, to: value)
+            case SerialBTDevice.serialNumberCharacteristicCBUUID:
+                print("got serial number")
+                availableBTDevices[index].setDeviceInfo(for: .SerialNumber, to: value)
+            case SerialBTDevice.hardwareRevCharacteristicCBUUID:
+                print("got hardware revision")
+                availableBTDevices[index].setDeviceInfo(for: .HardwareRev, to: value)
+            case SerialBTDevice.firmwareRevCharacteristicCBUUID:
+                print("got firmware revision")
+                availableBTDevices[index].setDeviceInfo(for: .FirmwareRev, to: value)
+            case SerialBTDevice.softwareRevCharacteristicCBUUID:
+                print("got software revision")
+                availableBTDevices[index].setDeviceInfo(for: .SoftwareRev, to: value)
+            case SerialBTDevice.systemIDCharacteristicCBUUID:
+                print("got systemID")
+                availableBTDevices[index].setDeviceInfo(for: .SystemID, to: value)
+            case SerialBTDevice.pnpIDCharacteristicCBUUID:
+                print("got pnpID")
+                availableBTDevices[index].setDeviceInfo(for: .PnPID, to: value)
+            case SerialBTDevice.medicalDevUDICharacteristicCBUUID:
+                print("got medical device UID")
+                availableBTDevices[index].setDeviceInfo(for: .MedicalDeviceUDI, to: value)
+            case SerialBTDevice.readDataPortCharacteristicCBUUID:
+                availableBTDevices[index].processPacket(characteristic.value)
+            default:
+                print("BTH: Haven't handled \(characteristic.uuid.uuidString) yet.")
+            }
         }
+
         renewStallTimer(for: peripheral)
     }
     
