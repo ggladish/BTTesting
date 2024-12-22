@@ -8,7 +8,7 @@
 import Foundation
 import CoreBluetooth
 
-struct BTDevice : Identifiable, Codable {
+struct BTDevice : Identifiable, Hashable, Codable {
     private var friendlyName: String?
     var deviceInformation = DeviceInformation()
     var peripheral: CBPeripheral?
@@ -19,6 +19,7 @@ struct BTDevice : Identifiable, Codable {
     private(set) var lastPacket: String?
     var stallTimer: Timer?
     var isStalled: Bool = true
+    var shortConnectionTimer: Timer?
     var deviceType = DeviceType.unknown
     
     init(deviceName: String? = nil, peripheral: CBPeripheral) {
@@ -108,7 +109,7 @@ struct BTDevice : Identifiable, Codable {
     // if not, should we be able to update peripheral?
     // I think peripheral.identifier will persist even over all device resets
 
-    enum DeviceType {
+    enum DeviceType: Hashable {
         case unknown
         case EggFinderGPS(EggFinderDevice)
         case EggTimer(EggTimerDevice)

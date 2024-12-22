@@ -29,7 +29,7 @@ enum SerialBTDevice {
 
 }
 
-struct DeviceInformation: Codable {
+struct DeviceInformation: Hashable, Codable {
     var manufacturerName: String?
     var modelNumber: String?
     var serialNumber: String?
@@ -40,6 +40,19 @@ struct DeviceInformation: Codable {
     var pnpID: [UInt8] = []
     var medicalDeviceUDI: [UInt8] = []
     var ieeeeDataList: [UInt8] = []
+    
+    var isEmpty: Bool {
+        return manufacturerName == nil &&
+           modelNumber == nil &&
+           serialNumber == nil &&
+           hardwareRevision == nil &&
+           firmwareRevision == nil &&
+           softwareRevision == nil &&
+           systemID.isEmpty &&
+           pnpID.isEmpty &&
+           medicalDeviceUDI.isEmpty &&
+           ieeeeDataList.isEmpty 
+    }
     
     mutating func setDeviceInformation(for mfgrDataType: MfgrDataType, to value: Data) {
         let valueAsString = String(data: value, encoding: .utf8)

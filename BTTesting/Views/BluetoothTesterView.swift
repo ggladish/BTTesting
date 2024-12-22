@@ -11,10 +11,17 @@ struct BluetoothTesterView: View {
     @State var bluetoothManager = BTManager()
     
     var body: some View {
-        VStack {
-            bluetoothScanControlButton
-            displayBluetoothDevices
-        }
+        NavigationStack {
+            Form {
+                bluetoothScanState
+                displayBluetoothDevices
+            }
+            .navigationDestination(for: BTDevice.self) { device in
+                if let index = bluetoothManager.index(of: device) {
+                    DeviceDetailView(device: $bluetoothManager.availableBTDevices[index])
+                }
+            }
+       }
         .refreshable {
             bluetoothManager.startBluetoothScan()
         }
@@ -22,7 +29,7 @@ struct BluetoothTesterView: View {
         .environment(bluetoothManager)
     }
     
-    private var bluetoothScanControlButton: some View {
+    private var bluetoothScanState: some View {
             ScanButtonView(isScanning: bluetoothManager.isScanning )
     }
     
@@ -37,7 +44,9 @@ struct BluetoothTesterView: View {
         Section("Known Devices") {
             ForEach (bluetoothManager.knownDevices) { device in
                 if let index = bluetoothManager.index(of: device) {
-                    BTDeviceListItemView(device: $bluetoothManager.availableBTDevices[index])
+                    NavigationLink(value: device) {
+                        BTDeviceListItemView(device: $bluetoothManager.availableBTDevices[index])
+                    }
                 }
             }
         }
@@ -47,7 +56,9 @@ struct BluetoothTesterView: View {
         Section("Unnown Devices") {
             ForEach (bluetoothManager.unknownDevices) { device in
                 if let index = bluetoothManager.index(of: device) {
-                    BTDeviceListItemView(device: $bluetoothManager.availableBTDevices[index])
+                    NavigationLink(value: device) {
+                        BTDeviceListItemView(device: $bluetoothManager.availableBTDevices[index])
+                    }
                 }
             }
         }

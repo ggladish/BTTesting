@@ -23,49 +23,50 @@ struct BTDeviceListItemView: View {
                     btManager.setKnown(device)
                 }
         } else {
-            DeviceConnectionButton(device: $device)
+            Text(device.displayName)
+//            DeviceConnectionButton(device: $device)
 //                .contentShape(Rectangle())
-                .onLongPressGesture { isEditingDeviceName = true }  // TODO: Add Haptic 
+//                .onLongPressGesture { isEditingDeviceName = true }  // TODO: Add Haptic 
 //                .swipeActions(edge: .leading) { editNameButton }  // redundant since onLongPressGesture works
-                .swipeActions(edge: .leading) { displayDetailsButton }
-                .swipeActions { deleteButton }
-                .sheet(isPresented: $isDisplaying) {
-                    DeviceDetailView(device: $device)
-                }
+//                .swipeActions(edge: .leading) { displayDetailsButton }
+//                .swipeActions { deleteButton }
+//                .sheet(isPresented: $isDisplaying) {
+//                    DeviceDetailView(device: $device)
+//                }
         }
 //            .presentationCompactAdaptation(.popover)
     }
     
-    private var connectionButton: some View {
-        Button {
-            device.isConnected ?
-            btManager.deselectBluetoothDevice(device) :
-            btManager.selectBluetoothDevice(device)
-        } label: {
-            Text(device.displayName)
-        }
-        .disabled(device.peripheral == nil)
-        // TODO: could this check that the device is actually present?
-        // Currently, just checks that it has been present since the app started
-    }
+//    private var connectionButton: some View {
+//        Button {
+//            device.isConnected ?
+//            btManager.deselectBluetoothDevice(device) :
+//            btManager.selectBluetoothDevice(device)
+//        } label: {
+//            Text(device.displayName)
+//        }
+//        .disabled(device.peripheral == nil)
+//        // TODO: could this check that the device is actually present?
+//        // Currently, just checks that it has been present since the app started
+//    }
     
-    private var editNameButton: some View {
-        Button("Edit") {
-            isEditingDeviceName = true
-        }
-    }
-    
-    private var displayDetailsButton: some View {
-        Button("Details",systemImage: "list.bullet.rectangle") {
-            isDisplaying = true
-        }
-    }
- 
-    private var deleteButton: some View {
-        Button("Delete", role: .destructive) {
-            btManager.removeDevice(device)
-        }
-    }
+//    private var editNameButton: some View {
+//        Button("Edit") {
+//            isEditingDeviceName = true
+//        }
+//    }
+//    
+//    private var displayDetailsButton: some View {
+//        Button("Details",systemImage: "list.bullet.rectangle") {
+//            isDisplaying = true
+//        }
+//    }
+// 
+//    private var deleteButton: some View {
+//        Button("Delete", role: .destructive) {
+//            btManager.removeDevice(device)
+//        }
+//    }
     
 //    private struct Constants {
 //        static let stallInterval: TimeInterval = -15.0

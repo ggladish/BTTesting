@@ -11,7 +11,7 @@ struct DeviceInfoView: View {
     var devInfo: DeviceInformation
     
     var body: some View {
-        Section {
+        Section("Device Information") {
             manufacturer
             model
             serial
@@ -22,8 +22,6 @@ struct DeviceInfoView: View {
             pnpID
             medID
             ieeeData
-        } header: {
-            Text("Device Information")
         }
     }
     

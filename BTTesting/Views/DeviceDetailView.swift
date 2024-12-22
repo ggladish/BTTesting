@@ -24,11 +24,17 @@ struct DeviceDetailView: View {
             editableDisplayName
             DeviceInfoView(devInfo: device.deviceInformation)
             lastPacketSection
+            forgetDeviceButton
+        }
+        .onAppear {
+            if device.deviceInformation.isEmpty {
+                btManager.requestDeviceInformation(for: device)
+            }
         }
     }
     
     private var editableDisplayName: some View {
-        Section {
+        Section("Device Name") {
             if isEditing {
                 TextField("Assign a device name", text: $device.displayName)
                     .onSubmit {
@@ -38,27 +44,29 @@ struct DeviceDetailView: View {
             } else {
                 DeviceConnectionButton(device: $device)
                     .onLongPressGesture { isEditing = true }
+                    .sensoryFeedback(.start, trigger: isEditing) // TODO: Add haptic
             }
-        } header: {
-            Text("Device Name")
-        }
-        .sensoryFeedback(.start, trigger: isEditing)// TODO: Add haptic
+        } 
     }
     
     private var lastPacketSection: some View {
-        Section {
+        Section("Last Packet") {
             HStack {
                 Text("Packet Time:")
                 Spacer()
                 Text(device.lastPacketDate?.formatted() ?? "None")
             }
             Text(device.lastPacket ?? "").lineLimit(2)
-        } header: {
-            Text("Last Packet")
         }
     }
     
-
+    private var forgetDeviceButton: some View {
+        Button("Forget", role: .destructive) {
+            btManager.removeDevice(device)
+            // TODO: also navigate back
+        }
+    }
+ 
     
 }
 

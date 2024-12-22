@@ -97,6 +97,21 @@ class BTManager: NSObject {
         setKnown(device)
     }
     
+    func requestDeviceInformation(for device: BTDevice) {
+        guard let peripheral = device.peripheral else { return }
+        if peripheral.state != .connected {
+            centralManager.connect(peripheral)
+        }
+        if let index = index(of: device) {
+            if let timer = availableBTDevices[index].shortConnectionTimer { timer.invalidate() }
+            availableBTDevices[index].shortConnectionTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { _ in
+                if !self.availableBTDevices[index].connectRequested {
+                    self.centralManager.cancelPeripheralConnection(peripheral)
+                }
+            }
+        }
+    }
+    
     func setKnown(_ device: BTDevice) {
         guard let devIndex = index(of: device) else { return }
         availableBTDevices[devIndex].setKnown()
@@ -228,9 +243,11 @@ extension BTManager: CBCentralManagerDelegate {
             availableBTDevices[index].peripheral = peripheral
 //            availableBTDevices[index].isConnected = true
         }
-        peripheral.discoverServices([SerialBTDevice.serialDataServiceCBUUID,
-                                     SerialBTDevice.deviceInformationServiceCBUUID])
-        
+        peripheral.discoverServices([SerialBTDevice.serialDataServiceCBUUID])
+        if let index = index(withUUID: peripheral.identifier),
+           availableBTDevices[index].deviceInformation.isEmpty {
+            peripheral.discoverServices([SerialBTDevice.deviceInformationServiceCBUUID])
+        }
         renewStallTimer(for: peripheral)
     }
     
@@ -254,17 +271,21 @@ extension BTManager: CBPeripheralDelegate {
         
         for service in services {
             print("BTH: service \(service.uuid.uuidString) \(service)")
-            peripheral.discoverCharacteristics([SerialBTDevice.mfgrNameCharacteristicCBUUID,
-                                                SerialBTDevice.modelNumberCharacteristicCBUUID,
-                                                SerialBTDevice.serialNumberCharacteristicCBUUID,
-                                                SerialBTDevice.hardwareRevCharacteristicCBUUID,
-                                                SerialBTDevice.firmwareRevCharacteristicCBUUID,
-                                                SerialBTDevice.softwareRevCharacteristicCBUUID,
-                                                SerialBTDevice.systemIDCharacteristicCBUUID,
-                                                SerialBTDevice.pnpIDCharacteristicCBUUID,
-                                                SerialBTDevice.medicalDevUDICharacteristicCBUUID,
-                                                SerialBTDevice.readDataPortCharacteristicCBUUID,
-                                                SerialBTDevice.writeDataPortCharacteristicCBUUID], for: service)
+            if service.uuid == SerialBTDevice.serialDataServiceCBUUID {
+                peripheral.discoverCharacteristics([SerialBTDevice.readDataPortCharacteristicCBUUID,
+                                                    SerialBTDevice.writeDataPortCharacteristicCBUUID], for: service)
+
+            } else if service.uuid == SerialBTDevice.deviceInformationServiceCBUUID {
+                peripheral.discoverCharacteristics([SerialBTDevice.mfgrNameCharacteristicCBUUID,
+                                                    SerialBTDevice.modelNumberCharacteristicCBUUID,
+                                                    SerialBTDevice.serialNumberCharacteristicCBUUID,
+                                                    SerialBTDevice.hardwareRevCharacteristicCBUUID,
+                                                    SerialBTDevice.firmwareRevCharacteristicCBUUID,
+                                                    SerialBTDevice.softwareRevCharacteristicCBUUID,
+                                                    SerialBTDevice.systemIDCharacteristicCBUUID,
+                                                    SerialBTDevice.pnpIDCharacteristicCBUUID,
+                                                    SerialBTDevice.medicalDevUDICharacteristicCBUUID], for: service)
+            }
         }
         
         renewStallTimer(for: peripheral)
