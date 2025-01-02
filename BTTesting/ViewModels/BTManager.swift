@@ -104,8 +104,11 @@ class BTManager: NSObject {
         }
         if let index = index(of: device) {
             if let timer = availableBTDevices[index].shortConnectionTimer { timer.invalidate() }
-            availableBTDevices[index].shortConnectionTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { _ in
+            print("Creating disconnect timer")
+            availableBTDevices[index].shortConnectionTimer = Timer.scheduledTimer(withTimeInterval: Constants.deviceInfoTimerDuration, repeats: false) { _ in
+                print("executing disconnect timer. ConnectRequested = \(self.availableBTDevices[index].connectRequested)")
                 if !self.availableBTDevices[index].connectRequested {
+                    print("sending disconnect request")
                     self.centralManager.cancelPeripheralConnection(peripheral)
                 }
             }
@@ -121,6 +124,7 @@ class BTManager: NSObject {
     }
     
     func deactivateDevices() {
+        // TODO: should we cancel all these connections first?
         for index in availableBTDevices.indices {
             availableBTDevices[index].deactivate()
         }
@@ -140,11 +144,15 @@ class BTManager: NSObject {
         guard let index = index(withUUID: peripheral.identifier) else { return }
         availableBTDevices[index].isStalled = false
         if let timer = availableBTDevices[index].stallTimer { timer.invalidate() }
-        availableBTDevices[index].stallTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: false) { _ in
+        availableBTDevices[index].stallTimer = Timer.scheduledTimer(withTimeInterval: Constants.stallTimerDuration, repeats: false) { _ in
             self.availableBTDevices[index].isStalled = true
         }
     }
     
+    private struct Constants {
+        static let stallTimerDuration: TimeInterval = 10.0
+        static let deviceInfoTimerDuration: TimeInterval = 5.0
+    }
 }
 
 extension BTManager: CBCentralManagerDelegate {

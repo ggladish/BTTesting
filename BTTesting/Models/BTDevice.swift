@@ -23,7 +23,7 @@ struct BTDevice : Identifiable, Hashable, Codable {
     var deviceType = DeviceType.unknown
     
     init(deviceName: String? = nil, peripheral: CBPeripheral) {
-        self.friendlyName = deviceName
+        self.friendlyName = deviceName != nil ? deviceName : peripheral.name
         self.peripheral = peripheral
         self.id = peripheral.identifier
     }

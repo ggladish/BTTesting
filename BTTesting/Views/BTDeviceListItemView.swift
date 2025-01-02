@@ -10,20 +10,28 @@ import CoreBluetooth
 
 struct BTDeviceListItemView: View {
     @Environment(BTManager.self) private var btManager: BTManager
-    @Binding var device: BTDevice
-    
-    @State private var isEditingDeviceName = false
-    @State private var isDisplaying = false
+//    @Binding var device: BTDevice
+    var device: BTDevice
+
+//    @State private var isEditingDeviceName = false
+//    @State private var isDisplaying = false
        
     var body: some View {
-        if isEditingDeviceName {
-            TextField("Assign a device name", text: $device.displayName)
-                .onSubmit {
-                    isEditingDeviceName = false
-                    btManager.setKnown(device)
-                }
-        } else {
+//        if isEditingDeviceName {
+//            TextField("Assign a device name", text: $device.displayName)
+//                .onSubmit {
+//                    isEditingDeviceName = false
+//                    btManager.setKnown(device)
+//                }
+//        } else {
+        HStack {
             Text(device.displayName)
+            Spacer()
+            Image(systemName: device.peripheral != nil ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash",
+                  variableValue: Double(device.isStalled ? 0.0 : 100.0) )
+                .contentTransition(.symbolEffect(.replace.magic(fallback: .downUp.byLayer), options: .nonRepeating))
+//                .symbolEffect(.variableColor.cumulative.hideInactiveLayers.nonReversing, options: .repeat(device.isStalled ? .periodic(0) : .continuous))
+        }
 //            DeviceConnectionButton(device: $device)
 //                .contentShape(Rectangle())
 //                .onLongPressGesture { isEditingDeviceName = true }  // TODO: Add Haptic 
@@ -35,7 +43,7 @@ struct BTDeviceListItemView: View {
 //                }
         }
 //            .presentationCompactAdaptation(.popover)
-    }
+//    }
     
 //    private var connectionButton: some View {
 //        Button {
@@ -82,6 +90,6 @@ struct BTDeviceListItemView: View {
 #Preview {
     @Previewable @State var device = BTDevice(deviceName: "Test Device", id: UUID())
     
-    BTDeviceListItemView(device: $device)
+    BTDeviceListItemView(device: device)
         .environment(BTManager())
 }

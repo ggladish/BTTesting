@@ -43,10 +43,10 @@ struct DeviceDetailView: View {
                     }
             } else {
                 DeviceConnectionButton(device: $device)
+                    .sensoryFeedback(.start, trigger: isEditing) // TODO: Figure out why haptic isn't happening
                     .onLongPressGesture { isEditing = true }
-                    .sensoryFeedback(.start, trigger: isEditing) // TODO: Add haptic
             }
-        } 
+        }
     }
     
     private var lastPacketSection: some View {
